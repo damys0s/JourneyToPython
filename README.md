@@ -1,10 +1,20 @@
 # JourneyToPython
 
-Petit projet d’apprentissage Python structuré “comme en production” : package en `src/`, CLI avec arguments, persistance CSV, tests, lint/format automatiques, et CI GitHub Actions.
+Petit projet d’apprentissage Python structuré **comme en production** :
 
-## Objectifs
+- package en `src/`
+- exécution en module
+- CLI avec arguments
+- persistance CSV
+- tests automatisés
+- lint / format
+- CI GitHub Actions
 
-- Apprendre Python en construisant un projet réel (pas juste des scripts).
+---
+
+## 🎯 Objectifs
+
+- Apprendre Python en construisant un **projet réel** (pas juste des scripts).
 - Mettre en place de bonnes pratiques :
   - structure `src/`
   - exécution en module (`python -m ...`)
@@ -13,33 +23,19 @@ Petit projet d’apprentissage Python structuré “comme en production” : pac
   - tests (pytest)
   - CI (GitHub Actions)
 
-## Stack / outils
+---
 
-- Python (venv gérée par `uv`)
-- `uv` : gestion de l’environnement + exécution (`uv run ...`)
-- `argparse` : CLI standard Python
-- CSV : stockage simple des données (fichier `people.csv`)
-- `ruff` : lint + format
-- `pytest` : tests
-- GitHub Actions : CI
+## 🧰 Stack / outils
 
-## Structure du projet
+- **Python 3.12+**
+- **uv** : gestion de l’environnement + exécution (`uv run ...`)
+- **argparse** : CLI standard Python
+- **CSV** : stockage simple des données (`people.csv`)
+- **ruff** : lint + format
+- **pytest** : tests
+- **GitHub Actions** : CI
 
-JourneyToPython/
-├─ src/
-│  └─ journey_to_python/
-│     ├─ __init__.py
-│     ├─ __main__.py
-│     ├─ app.py
-│     ├─ cli.py
-│     ├─ models/
-│     │  └─ person.py
-│     └─ storage/
-│        └─ csv_store.py
-├─ tests/
-├─ pyproject.toml
-├─ .pre-commit-config.yaml
-└─ .github/workflows/ci.yml
+---
 
 ## Installation
 
@@ -50,7 +46,6 @@ JourneyToPython/
 
 ### Setup du projet
 
-```powershell
 uv venv --python 3.12
 uv pip install -e .
 
@@ -58,17 +53,14 @@ uv pip install -e .
 
 ### Aide générale 
 
-```powershell
 uv run journey-to-python --help
 
 ### Créer une personne
 
-```powershell
 uv run journey-to-python person --name "John" --address "13 Main St"
 
 ### Avec email(s)
 
-```powershell
 uv run journey-to-python person \
   --name "Alice" \
   --address "9 rue de la montagne en France" \
@@ -77,25 +69,21 @@ uv run journey-to-python person \
 
 ### Lister des personnes
 
-```powershell
 uv run journey-to-python list --csv people.csv
 
 ### Supprimer une personne par ID
 
-```powershell
 uv run journey-to-python remove --id <ID> --csv people.csv
 
 ## Qualité de code
 
 ### Lint et format
 
-```powershell
 uv run ruff check . --fix
 uv run ruff format .
 
 ### Tests
 
-```powershell
 uv run pytest -q
 
 Les hooks pre-commit exécutent automatiquement Ruff avant chaque commit.
