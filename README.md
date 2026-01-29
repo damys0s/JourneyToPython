@@ -25,7 +25,6 @@ Petit projet d’apprentissage Python structuré “comme en production” : pac
 
 ## Structure du projet
 
-```text
 JourneyToPython/
 ├─ src/
 │  └─ journey_to_python/
@@ -41,7 +40,6 @@ JourneyToPython/
 ├─ pyproject.toml
 ├─ .pre-commit-config.yaml
 └─ .github/workflows/ci.yml
-text```
 
 ## Installation
 
