@@ -17,7 +17,7 @@ class Person:
 
 
 def main() -> None:
-    person = Person(name="John", address="123 Main St")
+    person = Person(name="John", address="13 Main St")
     print(person)
 
 
