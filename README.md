@@ -41,3 +41,79 @@ JourneyToPython/
 ├─ pyproject.toml
 ├─ .pre-commit-config.yaml
 └─ .github/workflows/ci.yml
+
+## Installation
+
+### Prérequis
+
+- Python 3.12+
+- `uv` installé
+
+### Setup du projet
+
+```powershell
+uv venv --python 3.12
+uv pip install -e .
+
+## Utilisation
+
+### Aide générale 
+
+```powershell
+uv run journey-to-python --help
+
+### Créer une personne
+
+```powershell
+uv run journey-to-python person --name "John" --address "13 Main St"
+
+### Avec email(s)
+
+```powershell
+uv run journey-to-python person \
+  --name "Alice" \
+  --address "9 rue de la montagne en France" \
+  --email test@email.fr \
+  --email other@email.fr
+
+### Lister des personnes
+
+```powershell
+uv run journey-to-python list --csv people.csv
+
+### Supprimer une personne par ID
+
+```powershell
+uv run journey-to-python remove --id <ID> --csv people.csv
+
+## Qualité de code
+
+### Lint et format
+
+```powershell
+uv run ruff check . --fix
+uv run ruff format .
+
+### Tests
+
+```powershell
+uv run pytest -q
+
+Les hooks pre-commit exécutent automatiquement Ruff avant chaque commit.
+
+## CI
+
+Une CI **GitHub Actions** est configurée pour exécuter :
+
+- le lint
+- le format
+- les tests
+
+À chaque **push** ou **pull request**.
+
+---
+
+## Notes
+
+- Les emails sont stockés dans le CSV avec un séparateur `;`.
+- Les dossiers générés (`.venv`, `*.egg-info`) sont ignorés par Git.
