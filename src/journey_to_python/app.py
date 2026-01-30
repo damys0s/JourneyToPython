@@ -1,5 +1,9 @@
 # src/journey_to_python/app.py
 
+from __future__ import annotations
+
+from collections.abc import Sequence
+
 # app.py joue le rôle de "chef d'orchestre" :
 # - il ne contient pas la logique métier (ça, c'est dans models/)
 # - il ne détaille pas toute la définition de la CLI (ça, c'est dans cli.py)
@@ -10,7 +14,7 @@
 from journey_to_python.cli import build_parser, handle_args
 
 
-def main() -> None:
+def main(argv: Sequence[str] | None = None) -> int:
     # Point d'entrée principal de l'application.
     # Cette fonction sera appelée :
     # - via `python -m journey_to_python` (en passant par __main__.py)
@@ -26,7 +30,9 @@ def main() -> None:
     # - valide les arguments (required, types, etc.)
     # - affiche automatiquement --help si demandé
     # - lève une erreur "user-friendly" si les arguments sont invalides
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # 3) On exécute la logique correspondant à la sous-commande choisie
     handle_args(args)
+
+    return 0
