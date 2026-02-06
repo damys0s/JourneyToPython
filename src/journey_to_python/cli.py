@@ -1,9 +1,14 @@
 # src/journey_to_python/cli.py
 import argparse
 
-from journey_to_python.domain import PersonId, PersonNotFound
+from journey_to_python.domain import PersonId, PersonNotFound, PersonUpdateEmpty
 from journey_to_python.infrastructure.csv_repository import CsvPeopleRepository
-from journey_to_python.services import create_person, list_people, remove_person
+from journey_to_python.services import (
+    create_person,
+    list_people,
+    remove_person,
+    update_person,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -43,6 +48,26 @@ def build_parser() -> argparse.ArgumentParser:
         "remove", help="Remove a person by ID from CSV"
     )
     remove_parser.add_argument("--id", required=True, help="Remove a person by ID")
+    remove_parser.add_argument(
+        "--csv", default="people.csv", help="Path to the CSV file (default: people.csv)"
+    )
+
+    # --- Command: update ---
+    update_parser = subparsers.add_parser(
+        "update", help="Update a person by ID from CSV"
+    )
+    update_parser.add_argument("--id", required=True, help="Update a person by ID")
+    update_parser.add_argument("--name", required=True, help="Set a person name")
+    update_parser.add_argument("--address", required=False, help="Set a person address")
+    remove_parser.add_argument(
+        "--active", action="store_true", help="Set person as active"
+    )
+    remove_parser.add_argument(
+        "--inactive", action="store_true", help="Set person as inactive"
+    )
+    remove_parser.add_argument(
+        "--email", action="append", default=[], help="Set person email (repeatable)"
+    )
     remove_parser.add_argument(
         "--csv", default="people.csv", help="Path to the CSV file (default: people.csv)"
     )
@@ -92,3 +117,25 @@ def handle_args(args: argparse.Namespace) -> None:
             return
 
         print(f"Removed person with id={args.id}")
+
+    if args.command == "update":
+        if not (
+            args.name or args.address or args.active or args.inactive or args.email
+        ):
+            try:
+                raise PersonUpdateEmpty(PersonId(args.id))
+            except PersonUpdateEmpty as e:
+                print(e)
+                return
+
+        if args.active and args.inactive:
+            print("Cannot set both --active and --inactive")
+            return
+
+        try:
+            update_person(repo, person_id=PersonId(args.id))
+        except PersonNotFound as e:
+            print(e)
+            return
+
+        print(f"Updated person with id={args.id}")

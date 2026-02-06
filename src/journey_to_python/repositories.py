@@ -16,10 +16,6 @@ class PeopleRepository(Protocol):
     - Ça permet de brancher CSV, SQLite, API, mémoire, etc. sans changer les services.
     """
 
-    def next_id(self) -> PersonId:
-        """Retourne un nouvel identifiant unique."""
-        ...
-
     def add(self, person: Person) -> None:
         """Persist/ajoute la personne."""
         ...
@@ -36,3 +32,17 @@ class PeopleRepository(Protocol):
         La CLI peut alors afficher un message clair.
         """
         ...
+
+    def get_by_id(self, person_id: PersonId) -> Person | None:
+        """Retourne une personne par son ID, ou None si elle n'existe pas."""
+        ...
+
+    def update(
+        self,
+        person_id: PersonId,
+        *,
+        name: str | None = None,
+        address: str | None = None,
+        active: bool | None = None,
+        emails: tuple[str, ...] | None = None,
+    ) -> Person: ...

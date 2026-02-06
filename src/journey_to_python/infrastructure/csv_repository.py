@@ -114,3 +114,33 @@ class CsvPeopleRepository(PeopleRepository):
             raise PersonNotFound(person_id)
 
         self._rewrite_all(remaining)
+
+    def get_by_id(self, person_id: PersonId) -> Person | None:
+        """Retourne une personne par son ID, ou None si elle n'existe pas."""
+        self._ensure_file_exists()
+        people = self.list_all()
+        for p in people:
+            if p.id == person_id:
+                return p
+        return None
+
+    def update(self, person: Person) -> None:
+        """
+        Met à jour une personne.
+
+        Version pro: lève PersonNotFound si l'id n'existe pas.
+        """
+        self._ensure_file_exists()
+        people = self.list_all()
+
+        updated = False
+        for i, p in enumerate(people):
+            if p.id == person.id:
+                people[i] = person
+                updated = True
+                break
+
+        if not updated:
+            raise PersonNotFound(person.id)
+
+        self._rewrite_all(people)

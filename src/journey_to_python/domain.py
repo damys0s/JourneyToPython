@@ -36,6 +36,16 @@ class PersonNotFound(DomainError):
         self.person_id = person_id
 
 
+class PersonUpdateEmpty(DomainError):
+    """
+    Erreur métier: tentative de mise à jour d'une personne sans champs à mettre à jour.
+    """
+
+    def __init__(self, person_id: PersonId) -> None:
+        super().__init__(f"No fields to update for person id={str(person_id)}")
+        self.person_id = person_id
+
+
 @dataclass(frozen=True, slots=True)
 class Person:
     """
