@@ -46,6 +46,26 @@ class PersonUpdateEmpty(DomainError):
         self.person_id = person_id
 
 
+class InvalidEmail(DomainError):
+    """
+    Erreur métier: adresse email invalide.
+    """
+
+    def __init__(self, email: str) -> None:
+        super().__init__(f"Invalid email address: {email}")
+        self.email = email
+
+
+class InvalidPersonData(DomainError):
+    """
+    Erreur métier: données invalides pour une personne (ex: nom vide).
+    """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(f"Invalid person data: {message}")
+        self.message = message
+
+
 @dataclass(frozen=True, slots=True)
 class Person:
     """

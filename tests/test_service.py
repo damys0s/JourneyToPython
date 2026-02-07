@@ -124,3 +124,61 @@ def test_remove_person_removes_when_present() -> None:
 
     # Assert: seule la personne B reste en mémoire.
     assert [p.id for p in repo.list_all()] == [PersonId("B")]
+
+
+def test_validate_email_raises_on_invalid_email() -> None:
+    from journey_to_python.services import InvalidEmail, validate_email
+
+    with pytest.raises(InvalidEmail) as exc:
+        validate_email("invalid-email")
+
+    assert exc.value.email == "invalid-email"
+
+    with pytest.raises(InvalidEmail) as exc:
+        validate_email("")
+
+    assert exc.value.email == ""
+
+    with pytest.raises(InvalidEmail) as exc:
+        validate_email("user@domain")
+
+    assert exc.value.email == "user@domain"
+
+
+def test_validate_email_accepts_valid_email() -> None:
+    from journey_to_python.services import validate_email
+
+    valid_email = "user@example.com"
+    assert validate_email(valid_email) == valid_email
+
+
+def test_validate_emails_raises_on_invalid_email_in_list() -> None:
+    from journey_to_python.services import InvalidEmail, validate_emails
+
+    with pytest.raises(InvalidEmail) as exc:
+        validate_emails(["valid@example.com", "invalid-email"])
+
+    assert exc.value.email == "invalid-email"
+
+
+def test_validate_emails_accepts_all_valid_emails() -> None:
+    from journey_to_python.services import validate_emails
+
+    valid_emails = ["user1@example.com", "user2@example.com"]
+    assert validate_emails(valid_emails) == tuple(valid_emails)
+
+
+def test_validate_name_raises_on_empty_name() -> None:
+    from journey_to_python.services import InvalidPersonData, validate_name
+
+    with pytest.raises(InvalidPersonData) as exc:
+        validate_name("")
+
+    assert exc.value.message == "Name cannot be empty"
+
+
+def test_validate_name_accepts_valid_name() -> None:
+    from journey_to_python.services import validate_name
+
+    valid_name = "Alice"
+    assert validate_name(valid_name) == valid_name

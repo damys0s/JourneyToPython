@@ -1,5 +1,12 @@
 # src/journey_to_python/services.py
-from .domain import Person, PersonId, PersonUpdateEmpty, generate_person_id
+from .domain import (
+    InvalidEmail,
+    InvalidPersonData,
+    Person,
+    PersonId,
+    PersonUpdateEmpty,
+    generate_person_id,
+)
 from .repositories import PeopleRepository
 
 
@@ -13,10 +20,10 @@ def create_person(
 ) -> Person:
     person = Person(
         id=generate_person_id(),
-        name=name,
+        name=validate_name(name),
         address=address,
         active=active,
-        emails=tuple(emails),
+        emails=validate_emails(emails),
     )
     repo.add(person)
     return person
@@ -44,8 +51,48 @@ def update_person(
 
     return repo.update(
         person_id,
-        name=name,
+        name=validate_name(name) if name is not None else None,
         address=address,
         active=active,
-        emails=emails,
+        emails=validate_emails(emails) if emails is not None else None,
     )
+
+
+def validate_email(email: str) -> str:
+    """
+    Valide l'adresse email selon des règles simples (ex: doit contenir '@').
+
+    Lève InvalidEmail si l'email est invalide.
+
+    """
+    if "@" not in email:
+        raise InvalidEmail(email)
+    if email.strip() == "":
+        raise InvalidEmail(email)
+    local, domain = email.split("@", 1)
+    if "." not in domain:
+        raise InvalidEmail(email)
+    return email
+
+
+def validate_emails(emails: tuple[str, ...]) -> tuple[str, ...]:
+    """
+    Valide une liste d'emails et retourne un tuple d'emails valides.
+
+    Lève InvalidEmail si au moins un email est invalide.
+    """
+    valid_emails = []
+    for email in emails:
+        valid_emails.append(validate_email(email))
+    return tuple(valid_emails)
+
+
+def validate_name(name: str) -> str:
+    """
+    Valide le nom d'une personne (ex: ne doit pas être vide).
+
+    Lève ValueError si le nom est invalide.
+    """
+    if name.strip() == "":
+        raise InvalidPersonData("Name cannot be empty")
+    return name
