@@ -87,37 +87,37 @@ uv run journey-to-python --help
 Créer:
 
 ```bash
-uv run journey-to-python person --name "Alice" --address "Rue 1" --email "alice@example.com" --backend csv --csv people.csv
+uv run journey-to-python person --name "Alice" --address "Rue 1" --email "alice@example.com" --backend csv
 ```
 
 Lister:
 
 ```bash
-uv run journey-to-python list --backend csv --csv people.csv
+uv run journey-to-python list --backend csv
 ```
 
 Récupérer par ID:
 
 ```bash
-uv run journey-to-python get --id ABCDEFGHIJKL --backend csv --csv people.csv
+uv run journey-to-python get --id ABCDEFGHIJKL --backend csv
 ```
 
 Mettre à jour:
 
 ```bash
-uv run journey-to-python update --id ABCDEFGHIJKL --address "Nouvelle adresse" --backend csv --csv people.csv
+uv run journey-to-python update --id ABCDEFGHIJKL --address "Nouvelle adresse" --backend csv
 ```
 
 Supprimer:
 
 ```bash
-uv run journey-to-python remove --id ABCDEFGHIJKL --backend csv --csv people.csv
+uv run journey-to-python remove --id ABCDEFGHIJKL --backend csv
 ```
 
 Rechercher:
 
 ```bash
-uv run journey-to-python find --name "alice" --active --backend csv --csv people.csv
+uv run journey-to-python find --name "alice" --active --backend csv
 ```
 
 ### Exemples avec backend SQLite
@@ -125,19 +125,19 @@ uv run journey-to-python find --name "alice" --active --backend csv --csv people
 Créer:
 
 ```bash
-uv run journey-to-python person --name "Bob" --address "Rue 2" --email "bob@example.com" --backend sqlite --sqlite people.db
+uv run journey-to-python person --name "Bob" --address "Rue 2" --email "bob@example.com" --backend sqlite
 ```
 
 Lister:
 
 ```bash
-uv run journey-to-python list --backend sqlite --sqlite people.db
+uv run journey-to-python list --backend sqlite
 ```
 
 Rechercher:
 
 ```bash
-uv run journey-to-python find --email "bob@example.com" --backend sqlite --sqlite people.db
+uv run journey-to-python find --email "bob@example.com" --backend sqlite
 ```
 
 ## Qualité de code
