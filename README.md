@@ -1,106 +1,178 @@
-# JourneyToPython
+﻿# JourneyToPython
 
-Petit projet d’apprentissage Python structuré **comme en production** :
+`JourneyToPython` est une application CLI Python de gestion de personnes, construite comme un mini projet de production.
 
-- package en `src/`
-- exécution en module
-- CLI avec arguments
-- persistance CSV
-- tests automatisés
-- lint / format
-- CI GitHub Actions
+Le projet sert à la fois de terrain de progression Python et de démonstration de bonnes pratiques d'ingénierie logicielle: architecture en couches, contrat de persistance, tests automatisés, qualité de code et CI.
 
----
+## Objectifs
 
-## 🎯 Objectifs
+- Consolider les fondamentaux Python sur un projet réel.
+- Travailler une architecture maintenable (`domain` / `services` / `repositories` / `infrastructure`).
+- Implémenter plusieurs backends de persistance sans changer la logique métier.
+- Renforcer la qualité avec tests, linting et automatisation CI.
 
-- Apprendre Python en construisant un **projet réel** (pas juste des scripts).
-- Mettre en place de bonnes pratiques :
-  - structure `src/`
-  - exécution en module (`python -m ...`)
-  - CLI (Command Line Interface) avec `argparse`
-  - qualité de code (Ruff + pre-commit)
-  - tests (pytest)
-  - CI (GitHub Actions)
+## Fonctionnalités
 
----
+- `person`: créer une personne
+- `list`: lister les personnes
+- `get`: récupérer une personne par ID
+- `update`: mise à jour partielle d'une personne
+- `remove`: supprimer une personne par ID
+- `find`: recherche multi-critères (`name`, `address`, `active/inactive`, `email`)
 
-## 🧰 Stack / outils
+## Backends supportés
 
-- **Python 3.12+**
-- **uv** : gestion de l’environnement + exécution (`uv run ...`)
-- **argparse** : CLI standard Python
-- **CSV** : stockage simple des données (`people.csv`)
-- **ruff** : lint + format
-- **pytest** : tests
-- **GitHub Actions** : CI
+- CSV (`people.csv`)
+- SQLite (`people.db`)
 
----
+Sélection via `--backend csv|sqlite` sur les commandes CLI.
+
+## Architecture
+
+```text
+CLI (argparse)
+  -> services (règles métier, validations)
+    -> PeopleRepository (contrat)
+      -> CsvPeopleRepository | SQLitePeopleRepository (implémentations)
+```
+
+Structure principale:
+
+```text
+src/journey_to_python/
+  app.py
+  cli.py
+  domain.py
+  services.py
+  repositories.py
+  infrastructure/
+    csv_repository.py
+    sqlite_repository.py
+tests/
+```
+
+## Stack
+
+- Python 3.12+
+- `uv` (environnement + exécution)
+- `argparse` (CLI)
+- `pytest` (tests)
+- `ruff` (lint + format)
+- GitHub Actions (CI)
 
 ## Installation
 
-### Prérequis
+Prérequis:
 
 - Python 3.12+
-- `uv` installé
+- `uv`
 
-### Setup du projet
+Setup:
 
+```bash
 uv venv --python 3.12
-uv pip install -e .
+uv sync --dev
+```
 
 ## Utilisation
 
-### Aide générale 
+Aide:
 
+```bash
 uv run journey-to-python --help
+```
 
-### Créer une personne
+### Exemples avec backend CSV
 
-uv run journey-to-python person --name "John" --address "13 Main St"
+Créer:
 
-### Avec email(s)
+```bash
+uv run journey-to-python person --name "Alice" --address "Rue 1" --email "alice@example.com" --backend csv --csv people.csv
+```
 
-uv run journey-to-python person \
-  --name "Alice" \
-  --address "9 rue de la montagne en France" \
-  --email test@email.fr \
-  --email other@email.fr
+Lister:
 
-### Lister des personnes
+```bash
+uv run journey-to-python list --backend csv --csv people.csv
+```
 
-uv run journey-to-python list --csv people.csv
+Récupérer par ID:
 
-### Supprimer une personne par ID
+```bash
+uv run journey-to-python get --id ABCDEFGHIJKL --backend csv --csv people.csv
+```
 
-uv run journey-to-python remove --id <ID> --csv people.csv
+Mettre à jour:
+
+```bash
+uv run journey-to-python update --id ABCDEFGHIJKL --address "Nouvelle adresse" --backend csv --csv people.csv
+```
+
+Supprimer:
+
+```bash
+uv run journey-to-python remove --id ABCDEFGHIJKL --backend csv --csv people.csv
+```
+
+Rechercher:
+
+```bash
+uv run journey-to-python find --name "alice" --active --backend csv --csv people.csv
+```
+
+### Exemples avec backend SQLite
+
+Créer:
+
+```bash
+uv run journey-to-python person --name "Bob" --address "Rue 2" --email "bob@example.com" --backend sqlite --sqlite people.db
+```
+
+Lister:
+
+```bash
+uv run journey-to-python list --backend sqlite --sqlite people.db
+```
+
+Rechercher:
+
+```bash
+uv run journey-to-python find --email "bob@example.com" --backend sqlite --sqlite people.db
+```
 
 ## Qualité de code
 
-### Lint et format
+Lint:
 
-uv run ruff check . --fix
+```bash
+uv run ruff check .
+```
+
+Format:
+
+```bash
 uv run ruff format .
+```
 
-### Tests
+Tests:
 
+```bash
 uv run pytest -q
-
-Les hooks pre-commit exécutent automatiquement Ruff avant chaque commit.
+```
 
 ## CI
 
-Une CI **GitHub Actions** est configurée pour exécuter :
+La CI GitHub Actions exécute les checks de qualité (lint/format) et les tests sur push / pull request.
 
-- le lint
-- le format
-- les tests
+## État actuel
 
-À chaque **push** ou **pull request**.
+- Couverture de tests active sur services, repositories (CSV/SQLite) et smoke CLI
+- Contrat de persistance unifié (`PeopleRepository`)
+- Implémentations CSV et SQLite validées
 
----
+## Roadmap (prochaine étape)
 
-## Notes
-
-- Les emails sont stockés dans le CSV avec un séparateur `;`.
-- Les dossiers générés (`.venv`, `*.egg-info`) sont ignorés par Git.
+- enrichir les validations métier (données d'entrée)
+- améliorer la recherche (`find`) pour gérer plusieurs emails en critère
+- ajouter des tests d'intégration CLI supplémentaires
+- préparer une exposition API (FastAPI) en réutilisant la couche services
