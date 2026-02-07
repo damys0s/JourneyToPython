@@ -4,6 +4,7 @@ from .domain import (
     InvalidPersonData,
     Person,
     PersonId,
+    PersonNotFound,
     PersonUpdateEmpty,
     generate_person_id,
 )
@@ -16,7 +17,7 @@ def create_person(
     name: str,
     address: str,
     active: bool,
-    emails: list[str],
+    emails: tuple[str, ...] = (),
 ) -> Person:
     person = Person(
         id=generate_person_id(),
@@ -56,6 +57,13 @@ def update_person(
         active=active,
         emails=validate_emails(emails) if emails is not None else None,
     )
+
+
+def get_person(repo: PeopleRepository, *, person_id: PersonId) -> Person:
+    person = repo.get_by_id(person_id)
+    if person is None:
+        raise PersonNotFound(person_id)
+    return person
 
 
 def validate_email(email: str) -> str:

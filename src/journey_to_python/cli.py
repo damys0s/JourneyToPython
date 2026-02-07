@@ -5,6 +5,7 @@ from journey_to_python.domain import PersonId, PersonNotFound, PersonUpdateEmpty
 from journey_to_python.infrastructure.csv_repository import CsvPeopleRepository
 from journey_to_python.services import (
     create_person,
+    get_person,
     list_people,
     remove_person,
     update_person,
@@ -69,6 +70,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--email", action="append", default=None, help="Set person email (repeatable)"
     )
     update_parser.add_argument(
+        "--csv", default="people.csv", help="Path to the CSV file (default: people.csv)"
+    )
+
+    # --- Command: get ---
+    get_parser = subparsers.add_parser("get", help="Get a person by ID from CSV")
+    get_parser.add_argument("--id", required=True, help="Get a person by ID")
+    get_parser.add_argument(
         "--csv", default="people.csv", help="Path to the CSV file (default: people.csv)"
     )
 
@@ -147,3 +155,12 @@ def handle_args(args: argparse.Namespace) -> None:
             return
 
         print(f"Updated person with id={args.id}")
+
+    if args.command == "get":
+        try:
+            person = get_person(repo, person_id=PersonId(args.id))
+        except PersonNotFound as e:
+            print(e)
+            return
+
+        print(person)

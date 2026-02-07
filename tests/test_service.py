@@ -76,7 +76,7 @@ def test_create_person_adds_person_and_returns_it(
         name="John",
         address="13 Main St",
         active=True,
-        emails=["a@b.com", "c@d.com"],
+        emails=("a@b.com", "c@d.com"),
     )
 
     # Assert: la personne renvoyée et la persistance en repo sont correctes.
@@ -156,7 +156,7 @@ def test_validate_emails_raises_on_invalid_email_in_list() -> None:
     from journey_to_python.services import InvalidEmail, validate_emails
 
     with pytest.raises(InvalidEmail) as exc:
-        validate_emails(["valid@example.com", "invalid-email"])
+        validate_emails(("valid@example.com", "invalid-email"))
 
     assert exc.value.email == "invalid-email"
 
@@ -164,8 +164,8 @@ def test_validate_emails_raises_on_invalid_email_in_list() -> None:
 def test_validate_emails_accepts_all_valid_emails() -> None:
     from journey_to_python.services import validate_emails
 
-    valid_emails = ["user1@example.com", "user2@example.com"]
-    assert validate_emails(valid_emails) == tuple(valid_emails)
+    valid_emails = ("user1@example.com", "user2@example.com")
+    assert validate_emails(valid_emails) == valid_emails
 
 
 def test_validate_name_raises_on_empty_name() -> None:
@@ -182,3 +182,25 @@ def test_validate_name_accepts_valid_name() -> None:
 
     valid_name = "Alice"
     assert validate_name(valid_name) == valid_name
+
+
+def test_get_person_returns_person_when_exists() -> None:
+    repo = FakeRepo()
+    person = Person(PersonId("A"), "Alice", "Rue 1", True, ())
+    repo.add(person)
+
+    from journey_to_python.services import get_person
+
+    result = get_person(repo, person_id=PersonId("A"))
+    assert result == person
+
+
+def test_get_person_raises_when_not_found() -> None:
+    repo = FakeRepo()
+
+    from journey_to_python.services import PersonNotFound, get_person
+
+    with pytest.raises(PersonNotFound) as exc:
+        get_person(repo, person_id=PersonId("Z"))
+
+    assert exc.value.person_id == PersonId("Z")

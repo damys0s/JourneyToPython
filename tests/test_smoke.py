@@ -1,4 +1,6 @@
 # tests/test_smoke.py
+import pytest
+
 from journey_to_python.app import main
 from journey_to_python.domain import Person, PersonId
 from journey_to_python.infrastructure.csv_repository import CsvPeopleRepository
@@ -107,3 +109,17 @@ def test_cli_update_missing_person(tmp_path, capsys):
     # Assert: la CLI expose le message PersonNotFound.
     assert code == 0
     assert "Person not found: id=ZZZZZZZZZZZZ" in out.out
+
+
+def test_cli_get_person_without_id(tmp_path, capsys):
+    csv_path = tmp_path / "people.csv"
+
+    # Act: appel de la CLI sans fournir d'ID.
+    with pytest.raises(SystemExit) as exc:
+        main(["get", "--csv", str(csv_path)])
+
+    out = capsys.readouterr()
+
+    # Assert: message d'erreur clair.
+    assert exc.value.code == 2  # argparse retourne 2 pour les erreurs de parsing
+    assert "the following arguments are required: --id" in out.err
