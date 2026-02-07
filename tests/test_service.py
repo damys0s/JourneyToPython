@@ -57,6 +57,25 @@ class FakeRepo:
         self._people = [p for p in self._people if p.id != person_id] + [updated]
         return updated
 
+    def find(
+        self,
+        *,
+        name: str | None = None,
+        address: str | None = None,
+        active: bool | None = None,
+        email: str | None = None,
+    ) -> list[Person]:
+        results = self._people
+        if name is not None:
+            results = [p for p in results if p.name == name]
+        if address is not None:
+            results = [p for p in results if p.address == address]
+        if active is not None:
+            results = [p for p in results if p.active == active]
+        if email is not None:
+            results = [p for p in results if email in p.emails]
+        return results
+
 
 def test_create_person_adds_person_and_returns_it(
     monkeypatch: pytest.MonkeyPatch,
@@ -204,3 +223,66 @@ def test_get_person_raises_when_not_found() -> None:
         get_person(repo, person_id=PersonId("Z"))
 
     assert exc.value.person_id == PersonId("Z")
+
+
+def test_find_person_by_name() -> None:
+    repo = FakeRepo()
+    repo.add(Person(PersonId("A"), "Alice", "Rue 1", True, ()))
+    repo.add(Person(PersonId("B"), "Bob", "Rue 2", True, ()))
+    repo.add(Person(PersonId("C"), "Alice", "Rue 3", False, ()))
+
+    from journey_to_python.services import find_people
+
+    results = find_people(repo, name="Alice")
+    assert len(results) == 2
+    assert all(p.name == "Alice" for p in results)
+
+
+def test_find_person_by_email() -> None:
+    repo = FakeRepo()
+    repo.add(Person(PersonId("A"), "Alice", "Rue 1", True, ("alice@example.com",)))
+    repo.add(Person(PersonId("B"), "Bob", "Rue 2", True, ("Bob@example.fr",)))
+    repo.add(Person(PersonId("C"), "Charlie", "Rue 3", False, ("Charlie@sfr.com")))
+
+    from journey_to_python.services import find_people
+
+    results = find_people(repo, email="alice@example.com")
+    assert len(results) == 1
+    assert results[0].id == PersonId("A")
+
+
+def test_find_person_by_active_status() -> None:
+    repo = FakeRepo()
+    repo.add(Person(PersonId("A"), "Alice", "Rue 1", True, ()))
+    repo.add(Person(PersonId("B"), "Bob", "Rue 2", False, ()))
+    repo.add(Person(PersonId("C"), "Charlie", "Rue 3", True, ()))
+
+    from journey_to_python.services import find_people
+
+    results = find_people(repo, active=True)
+    assert len(results) == 2
+    assert all(p.active for p in results)
+
+
+def test_find_person_by_multiple_criteria() -> None:
+    repo = FakeRepo()
+    repo.add(Person(PersonId("A"), "Alice", "Rue 1", True, ("alice@example.com",)))
+    repo.add(Person(PersonId("B"), "Bob", "Rue 2", True, ("Bob@toto.com")))
+    repo.add(Person(PersonId("C"), "Alice", "Rue 3", False, ("alice@sfr.com",)))
+
+    from journey_to_python.services import find_people
+
+    results = find_people(repo, name="Alice", active=True)
+    assert len(results) == 1
+    assert results[0].id == PersonId("A")
+
+
+def test_find_person_no_match() -> None:
+    repo = FakeRepo()
+    repo.add(Person(PersonId("A"), "Alice", "Rue 1", True, ("alice@example.com",)))
+    repo.add(Person(PersonId("B"), "Bob", "Rue 2", True, ("bob@example.com",)))
+
+    from journey_to_python.services import find_people
+
+    results = find_people(repo, name="Charlie")
+    assert len(results) == 0

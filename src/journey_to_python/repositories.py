@@ -46,3 +46,12 @@ class PeopleRepository(Protocol):
         active: bool | None = None,
         emails: tuple[str, ...] | None = None,
     ) -> Person: ...
+
+    def find_people(
+        self,
+        *,
+        name: str | None = None,
+        address: str | None = None,
+        active: bool | None = None,
+        email: str | None = None,
+    ) -> list[Person]: ...

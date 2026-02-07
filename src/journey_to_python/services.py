@@ -104,3 +104,17 @@ def validate_name(name: str) -> str:
     if name.strip() == "":
         raise InvalidPersonData("Name cannot be empty")
     return name
+
+
+def find_people(
+    repo: PeopleRepository,
+    *,
+    name: str | None = None,
+    address: str | None = None,
+    active: bool | None = None,
+    email: str | None = None,
+) -> list[Person]:
+    if name is None and address is None and active is None and email is None:
+        raise ValueError("At least one search criterion must be provided")
+
+    return repo.find(name=name, address=address, active=active, email=email)

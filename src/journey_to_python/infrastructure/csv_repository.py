@@ -5,7 +5,7 @@ import csv
 from dataclasses import dataclass, replace
 from pathlib import Path
 
-from journey_to_python.domain import Person, PersonId, PersonNotFound
+from journey_to_python.domain import InvalidPersonData, Person, PersonId, PersonNotFound
 from journey_to_python.repositories import PeopleRepository
 
 
@@ -164,3 +164,34 @@ class CsvPeopleRepository(PeopleRepository):
 
         self._rewrite_all(people)
         return people[i]
+
+    def find(
+        self,
+        *,
+        name: str | None = None,
+        address: str | None = None,
+        active: bool | None = None,
+        email: str | None = None,
+    ) -> list[Person]:
+        """
+        Recherche des personnes par critères.
+
+        Tous les critères sont optionnels, mais au moins un doit être fourni.
+        Retourne la liste des personnes qui matchent tous les critères fournis.
+        """
+        if name is None and address is None and active is None and email is None:
+            raise InvalidPersonData("At least one search criterion must be provided")
+
+        people = self.list_all()
+        results = []
+        for p in people:
+            if name is not None and name.lower() not in p.name.lower():
+                continue
+            if address is not None and address.lower() not in p.address.lower():
+                continue
+            if active is not None and p.active != active:
+                continue
+            if email is not None and all(email.lower() != e.lower() for e in p.emails):
+                continue
+            results.append(p)
+        return results

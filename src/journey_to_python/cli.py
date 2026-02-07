@@ -5,6 +5,7 @@ from journey_to_python.domain import PersonId, PersonNotFound, PersonUpdateEmpty
 from journey_to_python.infrastructure.csv_repository import CsvPeopleRepository
 from journey_to_python.services import (
     create_person,
+    find_people,
     get_person,
     list_people,
     remove_person,
@@ -77,6 +78,21 @@ def build_parser() -> argparse.ArgumentParser:
     get_parser = subparsers.add_parser("get", help="Get a person by ID from CSV")
     get_parser.add_argument("--id", required=True, help="Get a person by ID")
     get_parser.add_argument(
+        "--csv", default="people.csv", help="Path to the CSV file (default: people.csv)"
+    )
+
+    # -- Command: find people by criteria (name, address, active/inactive, email) ---
+    find_parser = subparsers.add_parser("find", help="Find people by criteria")
+    find_parser.add_argument("--name", required=False, help="Find by name")
+    find_parser.add_argument("--address", required=False, help="Find by address")
+    find_parser.add_argument("--active", action="store_true", help="Find active people")
+    find_parser.add_argument(
+        "--inactive", action="store_true", help="Find inactive people"
+    )
+    find_parser.add_argument(
+        "--email", action="append", default=None, help="Find by email (repeatable)"
+    )
+    find_parser.add_argument(
         "--csv", default="people.csv", help="Path to the CSV file (default: people.csv)"
     )
 
@@ -164,3 +180,19 @@ def handle_args(args: argparse.Namespace) -> None:
             return
 
         print(person)
+
+    if args.command == "find":
+        # Ex: journey-to-python find --name "Alice"
+        try:
+            people = find_people(
+                name=args.name,
+                address=args.address,
+                active=True if args.active else False if args.inactive else None,
+                email=args.email[0] if args.email is not None else None,
+            )
+        except PersonNotFound:
+            print("No people found matching the criteria.")
+            return
+
+        for p in people:
+            print(p)
