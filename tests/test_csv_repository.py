@@ -51,3 +51,77 @@ def test_remove_missing_raises(tmp_path) -> None:
         repo.remove(PersonId("ZZZZZZZZZZZZ"))
 
     assert exc.value.person_id == PersonId("ZZZZZZZZZZZZ")
+
+
+def test_update_full_existing_person(tmp_path) -> None:
+    # Arrange: on prépare un CSV temporaire + une personne existante.
+    # tmp_path est fourni par pytest et garantit un dossier isolé pour ce test.
+    csv_file = tmp_path / "people.csv"
+    repo = CsvPeopleRepository(str(csv_file))
+
+    p1 = Person(PersonId("AAAAAAAAAAAA"), "Alice", "Rue 1", True, ())
+    repo.add(p1)
+
+    # Act: on met à jour TOUS les champs modifiables de la personne.
+    updated = repo.update(
+        PersonId("AAAAAAAAAAAA"),
+        name="Alice Updated",
+        address="New Address",
+        active=False,
+        emails=("alice.updated@example.com",),
+    )
+
+    # Assert: on vérifie que l'objet retourné contient bien les nouvelles valeurs.
+    assert updated.id == PersonId("AAAAAAAAAAAA")
+    assert updated.name == "Alice Updated"
+    assert updated.address == "New Address"
+    assert updated.active is False
+    assert updated.emails == ("alice.updated@example.com",)
+
+
+def test_update_missing_person_raises(tmp_path) -> None:
+    # Arrange: repo vide => l'ID recherché n'existe pas.
+    csv_file = tmp_path / "people.csv"
+    repo = CsvPeopleRepository(str(csv_file))
+
+    # Act + Assert erreur:
+    # `with pytest.raises(...)` signifie:
+    # "le code à l'intérieur DOIT lever PersonNotFound".
+    # Si aucune exception n'est levée, le test échoue.
+    with pytest.raises(PersonNotFound) as exc:
+        repo.update(
+            PersonId("ZZZZZZZZZZZZ"),
+            name="Nonexistent",
+            address="Nowhere",
+            active=False,
+            emails=(),
+        )
+
+    # Assert complémentaire: on valide que l'erreur porte le bon person_id.
+    assert exc.value.person_id == PersonId("ZZZZZZZZZZZZ")
+
+
+def test_update_partial_existing_person(tmp_path) -> None:
+    # Arrange: une personne existe déjà en base CSV.
+    csv_file = tmp_path / "people.csv"
+    repo = CsvPeopleRepository(str(csv_file))
+
+    p1 = Person(PersonId("AAAAAAAAAAAA"), "Alice", "Rue 1", True, ())
+    repo.add(p1)
+
+    # Act: update partiel.
+    # Convention dans ce projet: un champ à None => on ne le modifie pas.
+    updated = repo.update(
+        PersonId("AAAAAAAAAAAA"),
+        name=None,
+        address="New Address",
+        active=None,
+        emails=None,
+    )
+
+    # Assert: seul `address` change; le reste doit rester identique.
+    assert updated.id == PersonId("AAAAAAAAAAAA")
+    assert updated.name == "Alice"  # inchangé
+    assert updated.address == "New Address"  # mis à jour
+    assert updated.active is True  # inchangé
+    assert updated.emails == ()  # inchangé

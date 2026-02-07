@@ -1,4 +1,4 @@
-# tests/test_services.py
+# tests/test_service.py
 from __future__ import annotations
 
 import pytest
@@ -28,20 +28,49 @@ class FakeRepo:
         if len(self._people) == before:
             raise PersonNotFound(person_id)
 
+    def get_by_id(self, person_id: PersonId) -> Person | None:
+        for p in self._people:
+            if p.id == person_id:
+                return p
+        return None
+
+    def update(
+        self,
+        person_id: PersonId,
+        *,
+        name: str | None = None,
+        address: str | None = None,
+        active: bool | None = None,
+        emails: tuple[str, ...] | None = None,
+    ) -> Person:
+        person = self.get_by_id(person_id)
+        if person is None:
+            raise PersonNotFound(person_id)
+
+        updated = Person(
+            id=person.id,
+            name=name if name is not None else person.name,
+            address=address if address is not None else person.address,
+            active=active if active is not None else person.active,
+            emails=emails if emails is not None else person.emails,
+        )
+        self._people = [p for p in self._people if p.id != person_id] + [updated]
+        return updated
+
 
 def test_create_person_adds_person_and_returns_it(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    # Arrange: repo en mémoire + ID déterministe (on retire l'aléatoire pour un test
+    # stable).
     repo = FakeRepo()
-
-    # On évite l’aléatoire dans un test: on force l'id généré.
-    # Adapte le chemin si tu as mis generate_person_id ailleurs.
     from journey_to_python import services as services_module
 
     monkeypatch.setattr(
         services_module, "generate_person_id", lambda: PersonId("TESTIDABCDEF")
     )
 
+    # Act: appel du service de création.
     person = create_person(
         repo,
         name="John",
@@ -50,6 +79,7 @@ def test_create_person_adds_person_and_returns_it(
         emails=["a@b.com", "c@d.com"],
     )
 
+    # Assert: la personne renvoyée et la persistance en repo sont correctes.
     assert person.id == PersonId("TESTIDABCDEF")
     assert person.name == "John"
     assert person.active is True
@@ -57,30 +87,40 @@ def test_create_person_adds_person_and_returns_it(
 
 
 def test_list_people_returns_all_people() -> None:
+    # Arrange: deux personnes déjà présentes dans le fake repo.
     repo = FakeRepo()
     repo.add(Person(PersonId("A"), "Alice", "Rue 1", True, ("a@x.com",)))
     repo.add(Person(PersonId("B"), "Bob", "Rue 2", False, ()))
 
+    # Act: on demande la liste via le service.
     people = list_people(repo)
 
+    # Assert: on récupère bien les deux IDs dans l'ordre attendu.
     assert [p.id for p in people] == [PersonId("A"), PersonId("B")]
 
 
 def test_remove_person_raises_when_missing() -> None:
+    # Arrange: repo avec une seule personne, différente de l'ID ciblé.
     repo = FakeRepo()
     repo.add(Person(PersonId("A"), "Alice", "Rue 1", True, ()))
 
+    # Act + Assert erreur:
+    # Le bloc `with pytest.raises(...)` vérifie que l'exception est bien levée.
     with pytest.raises(PersonNotFound) as exc:
         remove_person(repo, person_id=PersonId("Z"))
 
+    # Assert complémentaire: l'exception contient le bon ID.
     assert exc.value.person_id == PersonId("Z")
 
 
 def test_remove_person_removes_when_present() -> None:
+    # Arrange: deux personnes en repo.
     repo = FakeRepo()
     repo.add(Person(PersonId("A"), "Alice", "Rue 1", True, ()))
     repo.add(Person(PersonId("B"), "Bob", "Rue 2", True, ()))
 
+    # Act: suppression de la personne A.
     remove_person(repo, person_id=PersonId("A"))
 
+    # Assert: seule la personne B reste en mémoire.
     assert [p.id for p in repo.list_all()] == [PersonId("B")]

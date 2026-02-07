@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import csv
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from journey_to_python.domain import Person, PersonId, PersonNotFound
 from journey_to_python.repositories import PeopleRepository
 
 
+@dataclass
 class CsvPeopleRepository(PeopleRepository):
     """
     Implémentation CSV du repository.
@@ -124,7 +126,15 @@ class CsvPeopleRepository(PeopleRepository):
                 return p
         return None
 
-    def update(self, person: Person) -> None:
+    def update(
+        self,
+        person_id: PersonId,
+        *,
+        name: str | None = None,
+        address: str | None = None,
+        active: bool | None = None,
+        emails: tuple[str, ...] | None = None,
+    ) -> Person:
         """
         Met à jour une personne.
 
@@ -135,12 +145,22 @@ class CsvPeopleRepository(PeopleRepository):
 
         updated = False
         for i, p in enumerate(people):
-            if p.id == person.id:
+            if p.id == person_id:
+                person = replace(
+                    p,
+                    name=name if name is not None else p.name,
+                    address=address if address is not None else p.address,
+                    active=active if active is not None else p.active,
+                    emails=emails if emails is not None else p.emails,
+                )
                 people[i] = person
                 updated = True
                 break
+        else:
+            raise PersonNotFound(person_id)
 
         if not updated:
-            raise PersonNotFound(person.id)
+            raise PersonNotFound(person_id)
 
         self._rewrite_all(people)
+        return people[i]

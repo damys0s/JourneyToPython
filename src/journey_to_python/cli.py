@@ -57,18 +57,18 @@ def build_parser() -> argparse.ArgumentParser:
         "update", help="Update a person by ID from CSV"
     )
     update_parser.add_argument("--id", required=True, help="Update a person by ID")
-    update_parser.add_argument("--name", required=True, help="Set a person name")
+    update_parser.add_argument("--name", required=False, help="Set a person name")
     update_parser.add_argument("--address", required=False, help="Set a person address")
-    remove_parser.add_argument(
+    update_parser.add_argument(
         "--active", action="store_true", help="Set person as active"
     )
-    remove_parser.add_argument(
+    update_parser.add_argument(
         "--inactive", action="store_true", help="Set person as inactive"
     )
-    remove_parser.add_argument(
-        "--email", action="append", default=[], help="Set person email (repeatable)"
+    update_parser.add_argument(
+        "--email", action="append", default=None, help="Set person email (repeatable)"
     )
-    remove_parser.add_argument(
+    update_parser.add_argument(
         "--csv", default="people.csv", help="Path to the CSV file (default: people.csv)"
     )
 
@@ -131,9 +131,17 @@ def handle_args(args: argparse.Namespace) -> None:
         if args.active and args.inactive:
             print("Cannot set both --active and --inactive")
             return
+        active_value = True if args.active else False if args.inactive else None
 
         try:
-            update_person(repo, person_id=PersonId(args.id))
+            update_person(
+                repo,
+                person_id=PersonId(args.id),
+                name=args.name,
+                address=args.address,
+                active=active_value,
+                emails=tuple(args.email) if args.email is not None else None,
+            )
         except PersonNotFound as e:
             print(e)
             return

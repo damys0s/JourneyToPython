@@ -1,5 +1,5 @@
 # src/journey_to_python/services.py
-from .domain import Person, PersonId, PersonNotFound, generate_person_id
+from .domain import Person, PersonId, PersonUpdateEmpty, generate_person_id
 from .repositories import PeopleRepository
 
 
@@ -30,16 +30,22 @@ def remove_person(repo: PeopleRepository, *, person_id: PersonId) -> None:
     repo.remove(person_id)
 
 
-def update_person(repo: PeopleRepository, *, person_id: PersonId) -> None:
-    person = repo.get_by_id(person_id)
-    if not person:
-        raise PersonNotFound(person_id)
-    # On demande à l'utilisateur les champs à mettre à jour (ex: via input()).
-    # Pour simplifier, on va juste demander un nouveau nom et adresse.
-    repo.update(
+def update_person(
+    repo: PeopleRepository,
+    *,
+    person_id: PersonId,
+    name: str | None = None,
+    address: str | None = None,
+    active: bool | None = None,
+    emails: tuple[str, ...] | None = None,
+) -> Person:
+    if name is None and address is None and active is None and emails is None:
+        raise PersonUpdateEmpty(person_id)
+
+    return repo.update(
         person_id,
-        name=person.name,
-        address=person.address,
-        active=person.active,
-        emails=person.emails,
+        name=name,
+        address=address,
+        active=active,
+        emails=emails,
     )
