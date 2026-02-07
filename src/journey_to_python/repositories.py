@@ -47,11 +47,17 @@ class PeopleRepository(Protocol):
         emails: tuple[str, ...] | None = None,
     ) -> Person: ...
 
-    def find_people(
+    def find(
         self,
         *,
         name: str | None = None,
         address: str | None = None,
         active: bool | None = None,
         email: str | None = None,
-    ) -> list[Person]: ...
+    ) -> list[Person]:
+        """
+        Recherche multi-critères.
+
+        Convention: chaque critère à None signifie "ne pas filtrer ce champ".
+        """
+        ...

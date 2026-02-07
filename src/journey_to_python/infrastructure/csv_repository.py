@@ -73,6 +73,8 @@ class CsvPeopleRepository(PeopleRepository):
         """
         Réécrit complètement le fichier CSV avec la liste fournie.
         Helper centralisé => pas de duplication de code.
+
+        Note: en CSV, update/delete implique un rewrite complet du fichier.
         """
         with self.path.open("w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=self.HEADERS)
@@ -143,6 +145,7 @@ class CsvPeopleRepository(PeopleRepository):
         self._ensure_file_exists()
         people = self.list_all()
 
+        # Stratégie CSV: lecture complète -> modification en mémoire -> rewrite complet.
         updated = False
         for i, p in enumerate(people):
             if p.id == person_id:
@@ -182,6 +185,7 @@ class CsvPeopleRepository(PeopleRepository):
         if name is None and address is None and active is None and email is None:
             raise InvalidPersonData("At least one search criterion must be provided")
 
+        # Pas d'index en CSV: on fait un filtrage en mémoire.
         people = self.list_all()
         results = []
         for p in people:

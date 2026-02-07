@@ -47,9 +47,13 @@ def update_person(
     active: bool | None = None,
     emails: tuple[str, ...] | None = None,
 ) -> Person:
+    # Guard clause: une commande update sans champs est invalide.
     if name is None and address is None and active is None and emails is None:
         raise PersonUpdateEmpty(person_id)
 
+    # Convention importante:
+    # - None = "ne pas modifier ce champ"
+    # - valeur fournie = "mettre à jour ce champ"
     return repo.update(
         person_id,
         name=validate_name(name) if name is not None else None,
@@ -114,7 +118,9 @@ def find_people(
     active: bool | None = None,
     email: str | None = None,
 ) -> list[Person]:
+    # On impose au moins un critère pour éviter un "list all" déguisé.
     if name is None and address is None and active is None and email is None:
         raise ValueError("At least one search criterion must be provided")
 
+    # Les services délèguent la recherche à la couche repository.
     return repo.find(name=name, address=address, active=active, email=email)

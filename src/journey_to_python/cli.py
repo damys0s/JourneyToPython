@@ -3,6 +3,7 @@ import argparse
 
 from journey_to_python.domain import PersonId, PersonNotFound, PersonUpdateEmpty
 from journey_to_python.infrastructure.csv_repository import CsvPeopleRepository
+from journey_to_python.infrastructure.sqlite_repository import SQLitePeopleRepository
 from journey_to_python.services import (
     create_person,
     find_people,
@@ -11,6 +12,20 @@ from journey_to_python.services import (
     remove_person,
     update_person,
 )
+
+
+def build_repo(args):
+    # Point de décision unique pour choisir l'infrastructure de persistance.
+    if args.backend == "sqlite":
+        return SQLitePeopleRepository(args.sqlite)
+    return CsvPeopleRepository(args.csv)
+
+
+def file_save_message_type(args):
+    # Utilisé uniquement pour afficher le chemin cible à l'utilisateur.
+    if args.backend == "sqlite":
+        return f"{args.sqlite}"
+    return f"{args.csv}"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -36,13 +51,35 @@ def build_parser() -> argparse.ArgumentParser:
         "--inactive", action="store_true", help="Create an inactive person"
     )
     person_parser.add_argument(
-        "--csv", default="people.csv", help="Path to the CSV file, default: people.csv"
+        "--csv", default="people.csv", help="Path to the CSV file (default: people.csv)"
+    )
+    person_parser.add_argument(
+        "--sqlite",
+        default="people.db",
+        help="Path to the SQLite file (default: people.db)",
+    )
+    person_parser.add_argument(
+        "--backend",
+        choices=["csv", "sqlite"],
+        default="csv",
+        help="Choose the backend to use (default: csv)",
     )
 
     # --- Command: list ---
     list_parser = subparsers.add_parser("list", help="List people from CSV")
     list_parser.add_argument(
         "--csv", default="people.csv", help="Path to the CSV file (default: people.csv)"
+    )
+    list_parser.add_argument(
+        "--sqlite",
+        default="people.db",
+        help="Path to the SQLite file (default: people.db)",
+    )
+    list_parser.add_argument(
+        "--backend",
+        choices=["csv", "sqlite"],
+        default="csv",
+        help="Choose the backend to use (default: csv)",
     )
 
     # --- Command: remove ---
@@ -52,6 +89,17 @@ def build_parser() -> argparse.ArgumentParser:
     remove_parser.add_argument("--id", required=True, help="Remove a person by ID")
     remove_parser.add_argument(
         "--csv", default="people.csv", help="Path to the CSV file (default: people.csv)"
+    )
+    remove_parser.add_argument(
+        "--sqlite",
+        default="people.db",
+        help="Path to the SQLite file (default: people.db)",
+    )
+    remove_parser.add_argument(
+        "--backend",
+        choices=["csv", "sqlite"],
+        default="csv",
+        help="Choose the backend to use (default: csv)",
     )
 
     # --- Command: update ---
@@ -73,12 +121,34 @@ def build_parser() -> argparse.ArgumentParser:
     update_parser.add_argument(
         "--csv", default="people.csv", help="Path to the CSV file (default: people.csv)"
     )
+    update_parser.add_argument(
+        "--sqlite",
+        default="people.db",
+        help="Path to the SQLite file (default: people.db)",
+    )
+    update_parser.add_argument(
+        "--backend",
+        choices=["csv", "sqlite"],
+        default="csv",
+        help="Choose the backend to use (default: csv)",
+    )
 
     # --- Command: get ---
     get_parser = subparsers.add_parser("get", help="Get a person by ID from CSV")
     get_parser.add_argument("--id", required=True, help="Get a person by ID")
     get_parser.add_argument(
         "--csv", default="people.csv", help="Path to the CSV file (default: people.csv)"
+    )
+    get_parser.add_argument(
+        "--sqlite",
+        default="people.db",
+        help="Path to the SQLite file (default: people.db)",
+    )
+    get_parser.add_argument(
+        "--backend",
+        choices=["csv", "sqlite"],
+        default="csv",
+        help="Choose the backend to use (default: csv)",
     )
 
     # -- Command: find people by criteria (name, address, active/inactive, email) ---
@@ -95,6 +165,17 @@ def build_parser() -> argparse.ArgumentParser:
     find_parser.add_argument(
         "--csv", default="people.csv", help="Path to the CSV file (default: people.csv)"
     )
+    find_parser.add_argument(
+        "--sqlite",
+        default="people.db",
+        help="Path to the SQLite file (default: people.db)",
+    )
+    find_parser.add_argument(
+        "--backend",
+        choices=["csv", "sqlite"],
+        default="csv",
+        help="Choose the backend to use (default: csv)",
+    )
 
     return parser
 
@@ -109,7 +190,7 @@ def handle_args(args: argparse.Namespace) -> None:
     # Chaque commande instancie un repo (CSV ici).
     # Plus tard, tu pourras remplacer CsvPeopleRepository par SQLitePeopleRepository
     # sans changer les services.
-    repo = CsvPeopleRepository(args.csv)
+    repo = build_repo(args)
 
     if args.command == "person":
         person = create_person(
@@ -120,13 +201,13 @@ def handle_args(args: argparse.Namespace) -> None:
             emails=args.email,
         )
         print(person)
-        print(f"Saved to {args.csv}")
+        print("Saved to", file_save_message_type(args), " !")
         return
 
     if args.command == "list":
         people = list_people(repo)
         if not people:
-            print(f"No people found in {args.csv}")
+            print(f"No people found in {file_save_message_type(args)}")
             return
 
         for p in people:
@@ -140,7 +221,7 @@ def handle_args(args: argparse.Namespace) -> None:
             print(e)
             return
 
-        print(f"Removed person with id={args.id}")
+        print("Removed from", file_save_message_type(args), " !")
 
     if args.command == "update":
         if not (
@@ -155,6 +236,10 @@ def handle_args(args: argparse.Namespace) -> None:
         if args.active and args.inactive:
             print("Cannot set both --active and --inactive")
             return
+        # Tri-state:
+        # - True  => force actif
+        # - False => force inactif
+        # - None  => ne pas modifier l'état actuel
         active_value = True if args.active else False if args.inactive else None
 
         try:
@@ -170,7 +255,7 @@ def handle_args(args: argparse.Namespace) -> None:
             print(e)
             return
 
-        print(f"Updated person with id={args.id}")
+        print(f"Updated person with id={args.id} in {file_save_message_type(args)} !")
 
     if args.command == "get":
         try:
@@ -185,9 +270,12 @@ def handle_args(args: argparse.Namespace) -> None:
         # Ex: journey-to-python find --name "Alice"
         try:
             people = find_people(
+                repo,
                 name=args.name,
                 address=args.address,
                 active=True if args.active else False if args.inactive else None,
+                # La CLI accepte --email répétable, mais la recherche actuelle
+                # utilise un seul email (le premier) comme critère.
                 email=args.email[0] if args.email is not None else None,
             )
         except PersonNotFound:
