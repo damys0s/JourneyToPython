@@ -1,6 +1,13 @@
 import sqlite3
+from datetime import datetime
 
-from citypulse.domain import CityData, Pollution, Weather
+from citypulse.domain import (
+    CityData,
+    CityDataAlreadyExists,
+    CityDataNotFound,
+    Pollution,
+    Weather,
+)
 
 
 class SqliteCityRepository:
@@ -32,6 +39,7 @@ class SqliteCityRepository:
                     temperature REAL NOT NULL,
                     humidity REAL NOT NULL,
                     pressure REAL NOT NULL,
+                    date TEXT NOT NULL,
                     FOREIGN KEY (city_id) REFERENCES city_data(id) ON DELETE CASCADE
                     )
                 """
@@ -45,6 +53,7 @@ class SqliteCityRepository:
                     no2 REAL NOT NULL,
                     so2 REAL NOT NULL,
                     co REAL NOT NULL,
+                    date TEXT NOT NULL,
                     FOREIGN KEY (city_id) REFERENCES city_data(id) ON DELETE CASCADE
                     )
                 """
@@ -54,7 +63,7 @@ class SqliteCityRepository:
         with self.connect() as conn:
             cursor = conn.execute(
                 "SELECT cd.city, w.temperature, w.humidity, w.pressure, "
-                "p.pm10, p.pm25, p.no2, p.so2, p.co FROM city_data cd "
+                "p.pm10, p.pm25, p.no2, p.so2, p.co, w.date, p.date FROM city_data cd "
                 "JOIN weather w ON w.city_id = cd.id "
                 "JOIN pollution p ON p.city_id = cd.id "
                 "WHERE cd.city = ?",
@@ -65,43 +74,62 @@ class SqliteCityRepository:
                 return None
             return CityData(
                 city=row[0],
-                weather=Weather(temperature=row[1], humidity=row[2], pressure=row[3]),
+                weather=Weather(
+                    temperature=row[1],
+                    humidity=row[2],
+                    pressure=row[3],
+                    date=datetime.fromisoformat(row[9]),
+                ),
                 pollution=Pollution(
-                    pm10=row[4], pm25=row[5], no2=row[6], so2=row[7], co=row[8]
+                    pm10=row[4],
+                    pm25=row[5],
+                    no2=row[6],
+                    so2=row[7],
+                    co=row[8],
+                    date=datetime.fromisoformat(row[10]),
                 ),
             )
 
-    def add_city_data(self, city_data) -> None:
-        with self.connect() as conn:
-            # Si city_data existe déjà:
-            if self.get_city_data(city_data.city) is None:
+    def add_city_data(self, city_data: CityData) -> None:
+        # Si city_data existe déjà:
+        if self.get_city_data(city_data.city):
+            raise CityDataAlreadyExists(
+                f"City data for {city_data.city} already exists"
+            )  # noqa: E501
+        else:
+            with self.connect() as conn:
                 conn.execute(
                     """
-                    INSERT INTO city_data (city) VALUES (?)
-                    """,
+                            INSERT INTO city_data (city) VALUES (?)
+                            """,
                     (city_data.city,),
                 )
                 conn.execute(
                     """
-                    INSERT INTO weather (city_id, temperature, humidity, pressure) 
-                    VALUES (
-                        (SELECT id FROM city_data WHERE city = ?),
-                        ?, ?, ?
-                    )
-                    """,
+                        INSERT INTO weather
+                        (city_id, temperature, humidity, pressure, date)
+                        VALUES (
+                            (SELECT id FROM city_data WHERE city = ?),
+                            ?, ?, ?, ?
+                        )
+                        """,
                     (
                         city_data.city,
                         city_data.weather.temperature,
                         city_data.weather.humidity,
                         city_data.weather.pressure,
+                        city_data.weather.date.isoformat(),
                     ),
                 )
                 conn.execute(
                     """
-                    INSERT INTO pollution (city_id, pm10, pm25, no2, so2, co) VALUES (
-                        (SELECT id FROM city_data WHERE city = ?), ?, ?, ?, ?, ?
-                    )
-                    """,
+                        INSERT INTO pollution
+                        (city_id, pm10, pm25, no2, so2, co, date)
+                        VALUES (
+                            (SELECT id FROM city_data WHERE city = ?),
+                            ?, ?, ?, ?, ?, ?
+                        )
+                        """,
                     (
                         city_data.city,
                         city_data.pollution.pm10,
@@ -109,26 +137,32 @@ class SqliteCityRepository:
                         city_data.pollution.no2,
                         city_data.pollution.so2,
                         city_data.pollution.co,
+                        city_data.pollution.date.isoformat(),
                     ),
                 )
 
     def update_city_data(self, city_data: CityData) -> None:
+        # Si la ville n'existe pas
+        if not self.get_city_data(city_data.city):
+            raise CityDataNotFound(city_data.city)
         with self.connect() as conn:
             conn.execute(
                 """
-                UPDATE weather SET temperature = ?, humidity = ?, pressure = ?
+                UPDATE weather SET temperature = ?, humidity = ?, pressure = ?, date = ?
                 WHERE city_id = (SELECT id FROM city_data WHERE city = ?)
                 """,
                 (
                     city_data.weather.temperature,
                     city_data.weather.humidity,
                     city_data.weather.pressure,
+                    city_data.weather.date.isoformat(),
                     city_data.city,
                 ),
             )
             conn.execute(
                 """
-                UPDATE pollution SET pm10 = ?, pm25 = ?, no2 = ?, so2 = ?, co = ?
+                UPDATE pollution SET pm10 = ?, pm25 = ?, no2 = ?,
+                so2 = ?, co = ?, date = ?
                 WHERE city_id = (SELECT id FROM city_data WHERE city = ?) 
                 """,
                 (
@@ -137,6 +171,7 @@ class SqliteCityRepository:
                     city_data.pollution.no2,
                     city_data.pollution.so2,
                     city_data.pollution.co,
+                    city_data.pollution.date.isoformat(),
                     city_data.city,
                 ),
             )

@@ -1,4 +1,5 @@
 from dataclasses import FrozenInstanceError
+from datetime import datetime
 
 import pytest
 
@@ -6,8 +7,15 @@ from citypulse.domain import CityData, CityDataNotFound, Pollution, Weather
 
 
 def test_citydata_creation_success() -> None:
-    weather = Weather(temperature=25.0, humidity=60.0, pressure=1015.0)
-    pollution = Pollution(pm10=15.0, pm25=10.0, no2=30.0, so2=20.0, co=0.8)
+    weather = Weather(
+        temperature=25.0,
+        humidity=60.0,
+        pressure=1015.0,
+        date=datetime.now(),
+    )
+    pollution = Pollution(
+        pm10=15.0, pm25=10.0, no2=30.0, so2=20.0, co=0.8, date=datetime.now()
+    )
     city_data = CityData(city="TestCity", weather=weather, pollution=pollution)
 
     assert city_data.city == "TestCity"
@@ -28,8 +36,15 @@ def test_citydatanotfound_contains_city() -> None:
 
 
 def test_update_citydata_immutable() -> None:
-    weather = Weather(temperature=20.0, humidity=50.0, pressure=1013.0)
-    pollution = Pollution(pm10=10.0, pm25=5.0, no2=20.0, so2=15.0, co=0.5)
+    weather = Weather(
+        temperature=20.0,
+        humidity=50.0,
+        pressure=1013.0,
+        date=datetime.now(),
+    )
+    pollution = Pollution(
+        pm10=10.0, pm25=5.0, no2=20.0, so2=15.0, co=0.5, date=datetime.now()
+    )
     citydata = CityData(city="ImmutableCity", weather=weather, pollution=pollution)
 
     with pytest.raises(FrozenInstanceError):

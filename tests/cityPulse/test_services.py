@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 import pytest
 
 from citypulse.domain import CityData, CityDataNotFound, Pollution, Weather
@@ -31,8 +33,20 @@ def test_get_city_data_success() -> None:
     repo = FakeCityPulseRepo()
     city_data = CityData(
         city="Testville",
-        weather=Weather(temperature=20.0, humidity=50.0, pressure=1013.0),
-        pollution=Pollution(pm10=10.0, pm25=5.0, no2=20.0, so2=15.0, co=0.5),
+        weather=Weather(
+            temperature=20.0,
+            humidity=50.0,
+            pressure=1013.0,
+            date=datetime.now(),
+        ),
+        pollution=Pollution(
+            pm10=10.0,
+            pm25=5.0,
+            no2=20.0,
+            so2=15.0,
+            co=0.5,
+            date=datetime.now(),
+        ),
     )
     repo.add_city_data(city_data)
 
